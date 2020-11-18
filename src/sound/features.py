@@ -4,6 +4,7 @@ from librosa import feature
 import numpy as np
 import timbral_models
 import tensorflow_hub as hub
+import os
 
 SAMPLE_RATE = 16000
 
@@ -41,6 +42,8 @@ def mfcc(path=None, array=None, hop_length=160, n_mfcc=64, n_fft=512, win_length
 #     return timbre
 
 def hardness(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_hardness(path)
     except:
@@ -50,6 +53,8 @@ def hardness(path):
     return result
 
 def depth(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_depth(path, clip_output=True)
     except:
@@ -59,6 +64,8 @@ def depth(path):
     return result
 
 def brightness(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_brightness(path, clip_output=True)
     except:
@@ -68,6 +75,8 @@ def brightness(path):
     return result
 
 def roughness(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_roughness(path)
     except:
@@ -77,6 +86,8 @@ def roughness(path):
     return result
 
 def warmth(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_warmth(path)
     except:
@@ -87,6 +98,8 @@ def warmth(path):
 
 
 def sharpness(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_sharpness(path)
     except:
@@ -97,6 +110,8 @@ def sharpness(path):
 
 
 def boominess(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError
     try:
         result = timbral_models.timbral_booming(path)
     except:

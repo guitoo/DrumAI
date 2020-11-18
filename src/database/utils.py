@@ -13,6 +13,7 @@ from tqdm import tqdm
 from database.objects import Sample, SamplePath, SampleClass, SampleSubClass, Features, get_file
 from database.tables import create_tables
 from sound import features
+from sound.path import get_full_path
 
 
 import numpy as np
@@ -30,13 +31,13 @@ def fill_feature(key, fun, session):
     q = q.options(load_only(Features.id))
     paths_and_features = q.all()
 
-    print (paths_and_features)
+    # print (paths_and_features)
 
     for path, feature in tqdm(paths_and_features):
-        print(path)
-        print(feature.id)
+        # print(path)
+        # print(feature.id)
     # for path, feature in zip(tqdm(paths), features):
-        setattr(feature, key, fun(path))
+        setattr(feature, key, fun(get_full_path(path)))
         # print(path[0])
         # print(getattr(feature, key))
         session.merge(feature)
@@ -64,7 +65,7 @@ def populate_path_and_classes(filename, session):
         q = session.query(SamplePath.id).filter(SamplePath.path==path)
         if session.query(q.exists()).scalar():
             continue
-        feat_mfcc = features.fingerprint(path)
+        feat_mfcc = features.fingerprint(get_full_path(path))
         # mfccs.append(feat_mfcc)
         # print(feat_mfcc.shape)
         sample = Sample(feat_mfcc)
