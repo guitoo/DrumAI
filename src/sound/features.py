@@ -19,7 +19,7 @@ def vggish_embedding(path=None, array=None):
     if array is None:
         array = load_sample(path)
     array = fix_length(array, SAMPLE_RATE)
-    return vggish_model(array).numpy()[0]
+    return vggish_model(array).numpy().reshape(-1)
 
 def yamnet_embedding(path=None, array=None):
     if array is None:
