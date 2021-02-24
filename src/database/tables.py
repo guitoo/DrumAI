@@ -42,6 +42,9 @@ features_table = Table("features", metadata,
         Column("warmth", Float(2)),
         Column("sharpness", Float(2)),
         Column("boominess", Float(2)),
+        Column("contrast", postgresql.ARRAY(Float(2), dimensions=2)),
+        Column("zero_crossing_rate", postgresql.ARRAY(Float(2), dimensions=1)),
+        Column("spectral_flatness", postgresql.ARRAY(Float(2), dimensions=1))
     )
 
 def create_tables(engine, drop=False):

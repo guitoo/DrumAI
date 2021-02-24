@@ -11,8 +11,8 @@ SAMPLE_RATE = 16000
 vggish_model = hub.load('https://tfhub.dev/google/vggish/1')
 yamnet_model = hub.load('https://tfhub.dev/google/yamnet/1')
 
-def load_sample(path):
-    array, _ = load(path, sr=SAMPLE_RATE)
+def load_sample(path, sr=SAMPLE_RATE):
+    array, _ = load(path, sr=sr)
     return array
 
 def vggish_embedding(path=None, array=None):
@@ -120,7 +120,23 @@ def boominess(path):
         return -1
     return result
 
+def contrast(path=None, array=None, sr=SAMPLE_RATE):
+    if array is None:
+        array = load_sample(path, sr)
+    array = fix_length(array, sr)
+    return feature.spectral_contrast(array, sr=sr, fmin=62, n_bands=7)
 
+def zero_crossing_rate(path=None, array=None, sr=SAMPLE_RATE):
+    if array is None:
+        array = load_sample(path, sr)
+    array = fix_length(array, sr)
+    return feature.zero_crossing_rate(array).reshape(-1)
+
+def spectral_flatness(path=None, array=None, sr=SAMPLE_RATE):
+    if array is None:
+        array = load_sample(path, sr)
+    array = fix_length(array, sr)
+    return feature.spectral_flatness(array).reshape(-1)
 
 
 def fingerprint(path=None, array=None, **kwargs):

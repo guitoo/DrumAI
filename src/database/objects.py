@@ -39,6 +39,9 @@ class Array2D(TypeDecorator):
             return None
         return np.array(value)
 
+    def __str__(self):
+        return "FLOAT[][]"
+
 class Array1D(TypeDecorator):
     impl = postgresql.ARRAY(Float, dimensions=1)
 
@@ -58,6 +61,8 @@ class Array1D(TypeDecorator):
         # convert sql string to python time
         return np.array(value)
 
+    def __str__(self):
+        return "FLOAT[]"
 
 class Sample(Base):
     __tablename__ = 'samples'
@@ -94,7 +99,7 @@ class SampleClass(Base):
     __tablename__ = 'sample_classes'
 
     id = Column('id', Integer, primary_key=True)
-    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), unique=True)
+    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), unique=True, nullable=False)
     sample_class = Column('sample_class', String)
     sample = relationship("Sample", uselist=False, back_populates="sample_class")
 
@@ -108,7 +113,7 @@ class SampleSubClass(Base):
     __tablename__ = 'sample_subclasses'
 
     id = Column('id', Integer, primary_key=True)
-    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), unique=True)
+    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), unique=True, nullable=False)
     sample_subclass = Column('sample_subclass', String)
     sample = relationship("Sample", uselist=False, back_populates="sample_subclass")
 
@@ -123,7 +128,7 @@ class Features(Base):
 
     id = Column('id', Integer, primary_key=True)
 
-    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), unique=True)
+    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), unique=True, nullable=False)
     vgg = Column("vgg", Array1D)
     yam = Column("yam", Array1D)
     mfcc = Column("mfcc", Array2D)
@@ -137,8 +142,12 @@ class Features(Base):
     warmth = Column("warmth", Float)
     sharpness = Column("sharpness", Float)
     boominess = Column("boominess", Float)
-    sample = relationship("Sample", uselist=False, back_populates="features")
+    contrast = Column("contrast", Array2D)
+    zero_crossing_rate = Column("zero_crossing_rate", Array1D)
+    spectral_flatness = Column("spectral_flatness", Array1D)
 
+    sample = relationship("Sample", uselist=False, back_populates="features")
+    
     @validates('mfcc')
     def validate_mfcc(self, key, mfcc):
         # print(mfcc)

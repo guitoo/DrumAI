@@ -18,6 +18,18 @@ from sound.path import get_full_path
 
 import numpy as np
 
+FEATURES = {
+    'hardness': features.hardness,
+    'depth': features.depth,
+    'brightness': features.brightness,
+    'roughness': features.roughness,
+    'warmth': features.warmth,
+    'sharpness': features.sharpness,
+    'boominess': features.boominess,
+    'contrast': features.contrast,
+    'zero_crossing_rate': features.zero_crossing_rate,
+    'spectral_flatness': features.spectral_flatness
+}
 
 def fill_feature(key, fun, session):
     sample_ids = set(session.query(SamplePath.sample_id).all())
@@ -45,45 +57,84 @@ def fill_feature(key, fun, session):
 
 def fill_features(feature_list, session):
     for key, fun in feature_list.items():
+        print(f'filling feature {key}')
         fill_feature(key, fun, session)
 
 
 def populate_path_and_classes(filename, session):
-    data = pd.read_csv('full.csv')
+    data = pd.read_csv(filename)
     data = data.fillna(0)
     classes_cols = [ col_name for col_name in data.columns if col_name.startswith('class_') ]
     subclasses_cols = [col_name for col_name in data.columns if col_name.startswith('subclass_') ]
-
     df_classes = data[data[classes_cols].sum(axis=1) == 1][['path'] + classes_cols]
     df_subclasses = data[data[subclasses_cols].sum(axis=1) == 1][['path'] + subclasses_cols]
+    df_classes['class'] = df_classes[classes_cols].idxmax(axis=1).str.replace('class_','')
+    df_subclasses['class'] = df_subclasses[subclasses_cols].idxmax(axis=1).str.replace('subclass_','')
+    # classes_cols = [ col_name for col_name in data.columns if col_name.startswith('class_') ]
+    # subclasses_cols = [col_name for col_name in data.columns if col_name.startswith('subclass_') ]
 
-    df_classes['class'] = df_classes[classes_cols].idxmax(axis=1)
-    df_subclasses['class'] = df_subclasses[subclasses_cols].idxmax(axis=1)
+    # df_classes = data[data[classes_cols].sum(axis=1) == 1][['path'] + classes_cols]
+    # df_subclasses = data[data[subclasses_cols].sum(axis=1) == 1][['path'] + subclasses_cols]
 
-    # mfccs = []
+    # df_classes['class'] = df_classes[classes_cols].idxmax(axis=1)
+    # df_subclasses['class'] = df_subclasses[subclasses_cols].idxmax(axis=1)
+
+    # # mfccs = []
+    # for i, path in data['path'].items():
+    #     q = session.query(SamplePath.id).filter(SamplePath.path==path)
+    #     if session.query(q.exists()).scalar():
+    #         continue
+    #     feat_mfcc = features.fingerprint(get_full_path(path))
+    #     # mfccs.append(feat_mfcc)
+    #     # print(feat_mfcc.shape)
+    #     sample = Sample(feat_mfcc)
+    #     # print(sample.hash)
+
+    #     q = session.query(Sample.id).filter(Sample.hash==sample.hash)
+    #     if session.query(q.exists()).scalar():
+    #         oldpath, sample = session.query(SamplePath, Sample).filter(Sample.hash==sample.hash).filter(SamplePath.sample_id == Sample.id).first()
+    #         print(f"{oldpath.path} and {path} are identical")
+    #         continue
+
+    #     sample_path = SamplePath(path)
+    #     sample.path = sample_path
+    #     if i in df_classes.index:
+    #         sample_class = SampleClass(df_classes['class'][i].lstrip('class_'))
+    #         sample.sample_class = sample_class
+    #     if i in df_subclasses.index:
+    #         sample_subclass = SampleSubClass(df_subclasses['class'][i].lstrip('subclass_'))
+    #         sample.sample_subclass = sample_subclass
+    #     session.merge(sample)
+    # session.commit()
+    mfccs = []
     for i, path in data['path'].items():
         q = session.query(SamplePath.id).filter(SamplePath.path==path)
-        if session.query(q.exists()).scalar():
-            continue
-        feat_mfcc = features.fingerprint(get_full_path(path))
-        # mfccs.append(feat_mfcc)
-        # print(feat_mfcc.shape)
-        sample = Sample(feat_mfcc)
-        # print(sample.hash)
-
-        q = session.query(Sample.id).filter(Sample.hash==sample.hash)
-        if session.query(q.exists()).scalar():
-            oldpath, sample = session.query(SamplePath, Sample).filter(Sample.hash==sample.hash).filter(SamplePath.sample_id == Sample.id).first()
-            print(f"{oldpath.path} and {path} are identical")
-            continue
-
-        sample_path = SamplePath(path)
-        sample.path = sample_path
+        if not session.query(q.exists()).scalar():
+            feat_mfcc = features.fingerprint(path)
+            mfccs.append(feat_mfcc)
+            sample = Sample(feat_mfcc)
+            q = session.query(Sample.id).filter(Sample.hash==sample.hash)
+            if session.query(q.exists()).scalar():
+                oldpath, sample = session.query(SamplePath, Sample).filter(Sample.hash==sample.hash).filter(SamplePath.sample_id == Sample.id).first()
+                print(f"{oldpath.path} and {path} are identical")
+                continue
+            sample_path = SamplePath(path)
+            sample.path = sample_path
+            session.add(sample)
+        else:
+            sample = session.query(Sample).join(SamplePath.sample).filter(SamplePath.path==path).one()        
         if i in df_classes.index:
-            sample_class = SampleClass(df_classes['class'][i].lstrip('class_'))
-            sample.sample_class = sample_class
+            if sample.sample_class == None:
+                sample_class = SampleClass(df_classes['class'][i], sample)
+                session.add(sample_class)
+            else:
+                sample.sample_class.sample_class = df_classes['class'][i]
         if i in df_subclasses.index:
-            sample_subclass = SampleSubClass(df_subclasses['class'][i].lstrip('subclass_'))
-            sample.sample_subclass = sample_subclass
+            if sample.sample_subclass == None:
+                sample_subclass = SampleSubClass(df_subclasses['class'][i], sample)
+                session.add(sample_subclass)
+            else:
+                sample.sample_subclass.sample_subclass = df_subclasses['class'][i]
         session.merge(sample)
-    session.commit()
+        session.commit()
+    session.close()
