@@ -163,6 +163,25 @@ class Features(Base):
         # print(vgg)
         return vgg.tolist()
 
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String)
+
+class UserClassVote(Base):
+    __tablename__ = 'user_class_votes'
+
+    user_id = Column('user_id', Integer, ForeignKey("users.id"), primary_key=True)
+    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), primary_key=True)
+    sample_class = Column('sample_class', String)
+
+class UserSubClassVote(Base):
+    __tablename__ = 'user_sub_class_votes'
+
+    user_id = Column('user_id', Integer, ForeignKey("users.id"), primary_key=True)
+    sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), primary_key=True)
+    sample_subclass = Column('sample_subclass', String)
 
 
 def get_file(session, path=None, sample_id=None):

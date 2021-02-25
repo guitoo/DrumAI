@@ -47,6 +47,23 @@ features_table = Table("features", metadata,
         Column("spectral_flatness", postgresql.ARRAY(Float(2), dimensions=1))
     )
 
+users_table = Table("users", metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', String)
+)
+
+user_class_votes = Table("user_class_votes", metadata,
+    Column('user_id', Integer, ForeignKey("users.id"), primary_key=True),
+    Column('sample_id', Integer, ForeignKey("samples.id"), primary_key=True),
+    Column('sample_class', String)
+)
+
+user_class_votes = Table("user_sub_class_votes", metadata,
+    Column('user_id', Integer, ForeignKey("users.id"), primary_key=True),
+    Column('sample_id', Integer, ForeignKey("samples.id"), primary_key=True),
+    Column('sample_subclass', String)
+)
+
 def create_tables(engine, drop=False):
     if drop:
         classes_table.drop(engine, checkfirst=True)
