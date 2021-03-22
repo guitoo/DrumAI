@@ -2,12 +2,21 @@ from typing import Optional
 from fastapi.templating import Jinja2Templates
 from sound import features
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from database.objects import SampleClass
+
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile, Request
 from tensorflow import keras
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates/")
+
+engine = create_engine(
+    "postgresql+psycopg2://dev:dev@localhost/data",
+    # echo=True
+)
 
 class_names=[
     'Snare',
@@ -54,6 +63,11 @@ async def predict(samplefile: UploadFile = File(...)):
         "class": class_,
         "classes": class_names
     }
+
+@app.get("/dash")
+def dasf():
+    pass
+
 
 if __name__ == "__main__":
     uvicorn.run("api:app", host="0.0.0.0", port=8002, reload=True)

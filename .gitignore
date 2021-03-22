@@ -1,0 +1,5 @@
+.gitattributes
+.ipynb_checkpoints/
+.vscode/
+*.npy
+__pycache__
