@@ -1,16 +1,50 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import plotly.graph_objs as go
-from database.objects import Sample, SampleClass,SampleSubClass
+import plotly.express as px
+from umap import UMAP 
+from database.objects import Sample, SampleClass,SampleSubClass, Features
 
 import pandas as pd
 
 import streamlit as st
 
+@st.cache(ttl=3600)
+def umap_timbral(df):
+    timbral_features = ['hardness', 'depth', 'brightness', 'roughness', 'warmth', 'sharpness', 'boominess']
+
+    df[['embed_x', 'embed_y']] = UMAP(random_state=42).fit_transform(df[timbral_features])
+
+    return df
+
+def get_timbral_df():
+    
+    query = (
+        session.query(
+            SampleClass.sample_class.label('classe'),
+            Features.hardness,
+            Features.depth,
+            Features.brightness,
+            Features.roughness,
+            Features.warmth,
+            Features.sharpness,
+            Features.boominess,
+        ).select_from(Sample)
+        .join(Sample.sample_class)
+        .join(Sample.features)
+    ).statement
+
+    df = pd.read_sql(query, engine)
+
+    return df
+
 if __name__ == "__main__":
 
-    engine = create_engine("postgresql+psycopg2://dev:dev@postgres/data")
+    global engine
+    engine = create_engine("postgresql+psycopg2://dev:dev@localhost/data")
+    # engine = create_engine("postgresql+psycopg2://dev:dev@postgres/data")
     Session = sessionmaker(bind=engine)
+    global session
     session = Session()
 
     query_classes = (
@@ -34,6 +68,9 @@ if __name__ == "__main__":
     # st.sidebar.text("Menu")
     # tmp = st.number_input('choisir un nombre')
     # st.text(tmp)
+
+    st.title('Répartition des classes')
+
     selected_classes = st.radio('Classes:', ["all classes", "top 9 classes"]) #st.multiselect('Classes', all_classes, default=all_classes)
 
     if selected_classes == "top 9 classes":
@@ -41,3 +78,30 @@ if __name__ == "__main__":
 
     fig = go.Figure([go.Bar(x=class_df.index, y=class_df)])
     st.plotly_chart(fig)
+
+    timbral_features = ['hardness', 'depth', 'brightness', 'roughness', 'warmth', 'sharpness', 'boominess']
+
+    timbral_df = get_timbral_df()
+
+    st.title('Espace timbral')
+    col_a, col_b = st.beta_columns(2)
+
+    x_axis = col_a.radio('Axis X:', timbral_features)
+    y_axis = col_b.radio('Axis Y:', timbral_features)
+
+
+    
+    fig3 = px.scatter(
+            timbral_df, x=x_axis, y=y_axis, 
+            color="classe",
+            hover_data=timbral_features)
+    st.plotly_chart(fig3)
+
+    st.title('Espace timbral: Umap')
+    umap_df = umap_timbral(timbral_df)
+
+    fig2 = px.scatter(
+            umap_df, x="embed_x", y="embed_y", 
+            color="classe",
+            hover_data=timbral_features)
+    st.plotly_chart(fig2)
