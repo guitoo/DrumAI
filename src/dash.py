@@ -84,20 +84,21 @@ if __name__ == "__main__":
     timbral_df = get_timbral_df()
 
     st.title('Espace timbral')
-    col_a, col_b = st.beta_columns(2)
+    col_a, col_b, col_c = st.beta_columns(3)
 
     x_axis = col_a.radio('Axis X:', timbral_features)
     y_axis = col_b.radio('Axis Y:', timbral_features)
+    hue = col_c.radio('Color:', ['classe'] + timbral_features)
 
 
     
     fig3 = px.scatter(
             timbral_df, x=x_axis, y=y_axis, 
-            color="classe",
-            hover_data=timbral_features)
+            color=hue,
+            hover_data=timbral_features,)
     st.plotly_chart(fig3)
 
-    st.title('Espace timbral: Umap')
+    st.title('Espace timbral: Umap  ')
     umap_df = umap_timbral(timbral_df)
 
     fig2 = px.scatter(
