@@ -1,5 +1,7 @@
 from typing import Optional
 from fastapi.templating import Jinja2Templates
+from fastapi.logger import logger
+from fastapi.responses import JSONResponse
 from sound import features
 
 from sqlalchemy import create_engine
@@ -9,6 +11,9 @@ from database.objects import SampleClass
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile, Request
 from tensorflow import keras
+from tempfile import NamedTemporaryFile
+import shutil
+from pathlib import Path
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates/")
@@ -53,20 +58,32 @@ def form(request: Request):
 @app.post("/predict")
 async def predict(samplefile: UploadFile = File(...)):
     global model
-    vgg_emb = features.vggish_embedding(samplefile.file)
-    result = model.predict(vgg_emb.reshape(1,128))
+    logger.info(samplefile.file)
 
-    class_ = class_names[result.argmax()]
+    try:
+        suffix = Path(samplefile.filename).suffix
+        with NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                shutil.copyfileobj(samplefile.file, tmp)
+                tmp_path = Path(tmp.name)
+        vgg_emb = features.vggish_embedding(tmp_path)
+        tmp_path.unlink()
 
-    return {
-        "result": str(result),
-        "class": class_,
-        "classes": class_names
-    }
+        result = model.predict(vgg_emb.reshape(1,128))
 
-@app.get("/dash")
-def dasf():
-    pass
+
+
+        class_ = class_names[result.argmax()]
+
+        return {
+            "result": str(result),
+            "class": class_,
+            "classes": class_names
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={"message": str(e)},
+        )
 
 
 if __name__ == "__main__":
