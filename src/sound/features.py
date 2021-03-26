@@ -45,7 +45,10 @@ def hardness(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_hardness(path)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_hardness(array, fs=sr)
     except:
         return -1
     if np.isnan(result):
@@ -56,7 +59,10 @@ def depth(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_depth(path, clip_output=True)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_depth(array, fs=sr, clip_output=True)
     except:
         return -1
     if np.isnan(result):
@@ -67,7 +73,10 @@ def brightness(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_brightness(path, clip_output=True)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_brightness(array, fs=sr, clip_output=True)
     except:
         return -1
     if np.isnan(result):
@@ -78,7 +87,10 @@ def roughness(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_roughness(path)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_roughness(array, fs=sr)
     except:
         return -1
     if np.isnan(result):
@@ -89,7 +101,10 @@ def warmth(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_warmth(path)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_warmth(array, fs=sr)
     except:
         return -1
     if np.isnan(result):
@@ -101,7 +116,10 @@ def sharpness(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_sharpness(path)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_sharpness(array, fs=sr)
     except:
         return -1
     if np.isnan(result):
@@ -113,7 +131,10 @@ def boominess(path):
     if not os.path.exists(path):
         raise FileNotFoundError
     try:
-        result = timbral_models.timbral_booming(path)
+        array, sr = load(path)
+        if array.shape[0] < 1024:
+            array = fix_length(array, 1024)
+        result = timbral_models.timbral_booming(array, fs=sr)
     except:
         return -1
     if np.isnan(result):

@@ -32,6 +32,7 @@ FEATURES = {
     'spectral_flatness': features.spectral_flatness,
     'vgg': features.vggish_embedding,
     'yam': features.yamnet_embedding,
+    'mfcc': features.mfcc,
 }
 
 def fill_feature(key, fun, session):
