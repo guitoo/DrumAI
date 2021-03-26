@@ -382,11 +382,22 @@ class SelectedFrame(ttk.Frame):
         timbral_features.at[self.file, 'class'] = self.class_.get()
         tree_change_class(self.file, self.class_.get())
         canvas.redraw_figure()
+        args = (self.file, user_entry.get(), self.class_.get())
+        threading.Thread(target=api_correct_class, args=args, daemon=True).start()
 
     def select(self, file):
         self.file = file
         self.text.set(os.path.basename(file))
         self.class_.set(timbral_features.at[self.file, 'class'])
+
+
+def api_correct_class(file, user, class_):
+
+    predict_url = ENDPOINT_URL + '/correct'
+
+    with open(file, 'rb') as f:
+        r = requests.post(url=predict_url, files={'samplefile': f}, data={'username':user, 'class_':class_})
+        print(r.content)
 
 
 selection_frame = SelectedFrame(bottom_frame)

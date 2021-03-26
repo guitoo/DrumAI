@@ -29,7 +29,9 @@ FEATURES = {
     'boominess': features.boominess,
     'contrast': features.contrast,
     'zero_crossing_rate': features.zero_crossing_rate,
-    'spectral_flatness': features.spectral_flatness
+    'spectral_flatness': features.spectral_flatness,
+    'vgg': features.vggish_embedding,
+    'yam': features.yamnet_embedding,
 }
 
 def fill_feature(key, fun, session):
@@ -60,6 +62,47 @@ def fill_features(feature_list, session):
     for key, fun in feature_list.items():
         print(f'filling feature {key}')
         fill_feature(key, fun, session)
+
+def fill_user_feature(key, fun, sample, path, session):
+    # sample_ids = set(session.query(SamplePath.sample_id).all())
+    # filled_ids = set(session.query(Features.sample_id).filter(getattr(Features, key).isnot(None)).all())
+    # ids = sample_ids - filled_ids
+    # ids = list(ids)
+
+    # q = session.query(SamplePath.path, Features)
+    # q = q.filter(SamplePath.sample_id == Features.sample_id)
+    # q = q.filter(Features.sample_id.in_(ids))
+    # q = q.options(load_only(Features.id))
+    # paths_and_features = q.all()
+
+    # print (paths_and_features)
+    # feat_mfcc = features.fingerprint(path)
+    # sample = Sample(feat_mfcc)
+
+    # q = session.query(Sample.id).filter(Sample.hash==sample.hash)
+    # if session.query(q.exists()).scalar():
+    #     sample = session.query(Sample).filter(Sample.hash==sample.hash).first()
+    # else:
+    #     print('adding sample')
+    #     session.add(sample)
+    #     sample = session.query(Sample).filter(Sample.hash==sample.hash).first()
+
+    if sample.features is None:
+        print('creating Features')
+        sample.features = Features(sample=sample)
+        session.add(sample)
+    
+    if getattr(sample.features, key) is None:
+        print(f'creating Features {key}')
+        setattr(sample.features, key, fun(path))
+
+    session.add(sample)
+    session.commit()
+
+def fill_user_features(feature_list, sample, path, session):
+    for key, fun in feature_list.items():
+        print(f'filling feature {key}')
+        fill_user_feature(key, fun, sample, path, session)
 
 
 def populate_path_and_classes(filename, session):

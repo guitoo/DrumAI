@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 import plotly.graph_objs as go
 import plotly.express as px
 from umap import UMAP 
-from database.objects import Sample, SampleClass,SampleSubClass, Features
+from database.objects import Sample, SampleClass,SampleSubClass, Features, UserClassVote, User
 
 import pandas as pd
 
@@ -106,3 +106,18 @@ if __name__ == "__main__":
             color="classe",
             hover_data=timbral_features)
     st.plotly_chart(fig2)
+
+
+    query_user_classes = (
+        session.query(
+            UserClassVote.sample_class.label('classe'),
+            User.name,
+            Sample.id
+    #         SampleSubClass.sample_subclass
+        ).select_from(UserClassVote)
+        .join(UserClassVote.user)
+        .join(UserClassVote.sample)
+        # .join(Sample.sample_subclass)
+    )
+    df_user = pd.read_sql(query_user_classes.statement, engine)
+    st.write(df_user)

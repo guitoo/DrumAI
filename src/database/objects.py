@@ -73,6 +73,7 @@ class Sample(Base):
     path = relationship("SamplePath", uselist=False, back_populates="sample")
     sample_class = relationship("SampleClass", uselist=False, back_populates="sample")
     sample_subclass = relationship("SampleSubClass", uselist=False, back_populates="sample")
+    class_votes = relationship("UserClassVote", uselist=True, back_populates="sample")
     features = relationship("Features", uselist=False, back_populates="sample")
 
     def __init__(self, fingerprint):
@@ -103,10 +104,10 @@ class SampleClass(Base):
     sample_class = Column('sample_class', String)
     sample = relationship("Sample", uselist=False, back_populates="sample_class")
 
-    def __init__(self, sample_class, file=None):
+    def __init__(self, sample_class, sample=None):
         self.sample_class = sample_class
-        if file is not None:
-            self.file = file
+        if sample is not None:
+            self.sample = sample
 
 
 class SampleSubClass(Base):
@@ -169,12 +170,17 @@ class User(Base):
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String)
 
+    class_votes = relationship("UserClassVote", uselist=True, back_populates="user")
+
 class UserClassVote(Base):
     __tablename__ = 'user_class_votes'
 
     user_id = Column('user_id', Integer, ForeignKey("users.id"), primary_key=True)
     sample_id = Column('sample_id', Integer, ForeignKey("samples.id"), primary_key=True)
     sample_class = Column('sample_class', String)
+
+    sample = relationship("Sample", uselist=False, back_populates="class_votes")
+    user = relationship("User", uselist=False, back_populates="class_votes")
 
 class UserSubClassVote(Base):
     __tablename__ = 'user_sub_class_votes'
