@@ -127,11 +127,12 @@ style.configure(".", font=my_font)
 
 root = ttk.Frame(window)
 root.pack(side=TOP,fill=BOTH, expand=True)
-# progress_frame = ttk.Frame(root, height=15)
-# progress_frame.pack_propagate(0)
-# progress_frame.pack(side=BOTTOM, fill=X, expand=True)
+
 main_frame = ttk.Frame(root)
 main_frame.pack(side=TOP, fill=BOTH, expand=True)
+bottom_frame = ttk.Frame(root, height=50)
+bottom_frame.pack_propagate(0)
+bottom_frame.pack(side=BOTTOM, fill=X, expand=True)
 left_frame = ttk.Frame(main_frame, width=250)
 left_frame.pack_propagate(0)
 left_frame.pack(side=LEFT, fill=Y)
@@ -142,8 +143,10 @@ user_frame.pack(side=TOP)
 
 progress_var = IntVar(window)
 progress_var.set(100)
-progress = ttk.Progressbar(root, maximum=100, variable=progress_var)
+progress = ttk.Progressbar(bottom_frame, maximum=100, variable=progress_var)
 progress.pack(side=BOTTOM,fill=X, expand=True)
+
+
 
 label = ttk.Label(user_frame, text="User")
 user_entry = ttk.Entry(user_frame)
@@ -196,12 +199,13 @@ def import_samples_thread(files):
 def update_progress():
     global timbral_features
     if not thread.is_alive() and queue.empty():
-        # print('END')
+        import_button["state"] = "normal"
         return
 
     while not queue.empty():
         data = queue.get()
-        timbral_features = timbral_features.append(data['df'])
+        # timbral_features = timbral_features.append(data['df'])
+        timbral_features = timbral_features.combine_first(data['df'])
         file = data['df'].index[0]
         class_ = data['df']['class'][0]
         update_tree({file:class_})
@@ -218,9 +222,11 @@ def import_samples():
     files = []
     for file_type in file_types:
         for path in Path(directory).rglob(file_type):
-            files.append(path)
-            print(path.name)
-
+            path = str(path)
+            if path not in timbral_features.index:
+                files.append(path)
+                print(f"Adding file: {path}")
+    import_button["state"] = "disabled"
     import_samples_async(files)
 
     # predict_url = ENDPOINT_URL + '/predict'
@@ -264,7 +270,7 @@ import_button = ttk.Button(
 
 import_button.pack()
 
-path_iid = {}
+# path_iid = {}
 
 treeview = ttk.Treeview(left_frame)
 treeview.heading("#0",text="Files",anchor=tk.W)
@@ -274,25 +280,36 @@ for class_ in CLASSES:
 
 def OnTreeDoubleClick(event):
     iid = treeview.identify('item', event.x,event.y)
-    # iid = treeview.item(item, "iid")
-    print(iid)
     if iid in CLASSES:
         pass
     else:
-        play_sound(path_iid[iid])
+        play_sound(iid)
+
+def OnTreeClick(event):
+    iid = treeview.identify('item', event.x,event.y)
+    if iid in CLASSES:
+        pass
+    else:
+        selection_frame.select(iid)
 
 treeview.bind("<Double-1>", OnTreeDoubleClick)
+treeview.bind("<Button-1>", OnTreeClick)
 
 treeview.pack(side=TOP, fill=BOTH, expand=True)
 
 
 def update_tree(new_samples):
-    # global sample_dict
     global treeview
     
     for file, class_ in new_samples.items():
-        iid = treeview.insert(parents[class_], "end", text=os.path.basename(file))
-        path_iid[iid] = file
+        treeview.insert(parents[class_], "end", file, text=os.path.basename(file))
+        # path_iid[iid] = file
+
+def tree_change_class(file, new_class):
+    treeview.move(file, new_class, 0)
+    treeview.focus(file)
+    treeview.selection_set(file)
+    treeview.see(file)
 
 timbral_frame = ttk.Frame(right_frame, relief=SUNKEN, borderwidth=5)
 timbral_frame.pack(side=LEFT)
@@ -310,9 +327,9 @@ class TimbralRadioFrame(ttk.Frame):
     def __init__(self, root):
         super().__init__(root)
 
-        left = ttk.Frame(root)
+        left = ttk.Frame(self)
         left.pack(side=TOP)
-        right = ttk.Frame(root)
+        right = ttk.Frame(self)
         right.pack(side=TOP)
         x_label = ttk.Label(left, text="X axis")
         x_label.pack()
@@ -328,6 +345,36 @@ class TimbralRadioFrame(ttk.Frame):
 
 radios = TimbralRadioFrame(right_frame)
 radios.pack(side=LEFT, expand=False)
+
+class SelectedFrame(ttk.Frame):
+    
+    def __init__(self, root):
+        super().__init__(root)
+
+        self.file = None
+        self.text = StringVar()
+        self.label = ttk.Label(self, textvariable=self.text)
+        self.label.pack(side=LEFT, padx=10)
+        self.class_ = StringVar(self)
+
+        for class_ in  CLASSES:
+            rb = ttk.Radiobutton(self, command=self.update_class, text=class_, value=class_, variable=self.class_)
+            rb.pack(side=LEFT, anchor='w')
+
+
+    def update_class(self):
+        timbral_features.at[self.file, 'class'] = self.class_.get()
+        tree_change_class(self.file, self.class_.get())
+        canvas.redraw_figure()
+
+    def select(self, file):
+        self.file = file
+        self.text.set(os.path.basename(file))
+        self.class_.set(timbral_features.at[self.file, 'class'])
+
+
+selection_frame = SelectedFrame(bottom_frame)
+selection_frame.pack(side=BOTTOM, fill=X, expand=True)
 
 
 window.mainloop()
