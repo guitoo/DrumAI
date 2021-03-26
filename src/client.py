@@ -88,9 +88,11 @@ class timbral_space(FigureCanvasTkAgg):
         print("you pressed {}".format(event.__dict__))
         xydata = event.xdata, event.ydata
         points = [ (x, y) for x,y in zip(timbral_features[x_axis.get()], timbral_features[y_axis.get()])]
-        coords, index = closest(xydata, points)
+        _, index = closest(xydata, points)
         path = timbral_features.iloc[index].name
-        print(path)
+        treeview.focus(path)
+        treeview.selection_set(path)
+        treeview.see(path)
         play_sound(path)
         # self.redraw_figure()
 
@@ -272,7 +274,7 @@ import_button.pack()
 
 # path_iid = {}
 
-treeview = ttk.Treeview(left_frame)
+treeview = ttk.Treeview(left_frame, selectmode="browse")
 treeview.heading("#0",text="Files",anchor=tk.W)
 parents = {}
 for class_ in CLASSES:
@@ -292,8 +294,22 @@ def OnTreeClick(event):
     else:
         selection_frame.select(iid)
 
+def OnSelection(event):
+    iid = treeview.focus()
+    if iid in CLASSES:
+        pass
+    else:
+        selection_frame.select(iid)
+    # iid = treeview.identify('item', event.x,event.y)
+    # if iid in CLASSES:
+    #     pass
+    # else:
+    #     selection_frame.select(iid)
+
+
 treeview.bind("<Double-1>", OnTreeDoubleClick)
-treeview.bind("<Button-1>", OnTreeClick)
+# treeview.bind("<Button-1>", OnTreeClick)
+treeview.bind("<<TreeviewSelect>>", OnSelection)
 
 treeview.pack(side=TOP, fill=BOTH, expand=True)
 
