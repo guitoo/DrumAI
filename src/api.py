@@ -85,9 +85,8 @@ async def predict(samplefile: UploadFile = File(...)):
 
 
         class_ = class_names[result.argmax()]
-
         return {
-            "result": str(result),
+            "result": result[0].tolist(),
             "class": class_,
             "classes": class_names
         }
