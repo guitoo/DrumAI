@@ -22,7 +22,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates/")
 
 engine = create_engine(
-    "postgresql+psycopg2://dev:dev@localhost/data",
+    "postgresql+psycopg2://dev:dev@postgres/data",
     # echo=True
 )
 
@@ -38,9 +38,9 @@ class_names=[
     'Shaken'
 ]
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+# @app.get("/")
+# def read_root():
+#     return {"Hello": "World"}
 
 
 # @app.get("/items/{item_id}")

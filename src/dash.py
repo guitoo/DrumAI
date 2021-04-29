@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
 import plotly.graph_objs as go
 import plotly.express as px
 from umap import UMAP 
@@ -41,8 +42,8 @@ def get_timbral_df():
 if __name__ == "__main__":
 
     global engine
-    engine = create_engine("postgresql+psycopg2://dev:dev@localhost/data")
-    # engine = create_engine("postgresql+psycopg2://dev:dev@postgres/data")
+    # engine = create_engine("postgresql+psycopg2://dev:dev@localhost/data")
+    engine = create_engine("postgresql+psycopg2://dev:dev@postgres/data")
     Session = sessionmaker(bind=engine)
     global session
     session = Session()
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     col_a, col_b, col_c = st.beta_columns(3)
 
     x_axis = col_a.radio('Axis X:', timbral_features)
-    y_axis = col_b.radio('Axis Y:', timbral_features)
+    y_axis = col_b.radio('Axis Y:', timbral_features, index=1)
     hue = col_c.radio('Color:', ['classe'] + timbral_features)
 
 
@@ -107,6 +108,33 @@ if __name__ == "__main__":
             hover_data=timbral_features)
     st.plotly_chart(fig2)
 
+    st.title('Répartition des classes (utilisateurs)')
+
+    freq = (
+        session.query(
+            UserClassVote.sample_class,
+            func.count(UserClassVote.user_id).label('freq'),
+            UserClassVote.sample_id
+        ).select_from(UserClassVote)
+        .group_by(UserClassVote.sample_id)
+        .group_by(UserClassVote.sample_class)
+        .subquery("freq")
+    )
+    query = (
+        session.query(
+            freq.c.sample_class,
+            freq.c.sample_id
+        ).distinct(freq.c.sample_id)
+        .order_by(freq.c.sample_id, freq.c.freq.desc())
+    )
+
+    user_class = pd.read_sql(query.statement,engine)#.set_index('sample_id')
+    user_class = user_class.groupby('sample_class').size().sort_values(ascending=False)
+
+    fig4 = go.Figure([go.Bar(x=user_class.index, y=user_class)])
+    st.plotly_chart(fig4)
+
+    st.title('Corrections')
 
     query_user_classes = (
         session.query(

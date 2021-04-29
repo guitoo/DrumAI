@@ -55,6 +55,8 @@ CLASSES = ['Snare','Kick', 'Hat', 'Tom', 'Cymbal', 'Clap', 'Cowbell', 'Conga', '
 timbral_features = pd.DataFrame(columns= list(TIMBRAL_F.keys()) + ['class'])
 
 
+    
+
 class timbral_space(FigureCanvasTkAgg):
 
     def __init__(self, parent):
@@ -158,7 +160,7 @@ user_entry.pack(side=LEFT)
 
 sample_dict = {}
 
-file_types = ['*.wav', '*.mp3', '*.flac', '*.aiff' ]
+file_types = ['*.wav', '*.WAV', '*.mp3', '*.flac', '*.aiff' ]
 
 
 queue = queue.Queue()
@@ -403,5 +405,18 @@ def api_correct_class(file, user, class_):
 selection_frame = SelectedFrame(bottom_frame)
 selection_frame.pack(side=BOTTOM, fill=X, expand=True)
 
+if os.path.isfile('client.csv'):
+    timbral_features = pd.read_csv('client.csv', index_col=0)
+    for file, row in timbral_features.iterrows():
+        class_ = row['class']
+        update_tree({file:class_})
+    canvas.redraw_figure()
+
+
+def close_window():
+    timbral_features.to_csv('client.csv')
+    window.destroy()
+
+window.protocol("WM_DELETE_WINDOW", close_window)
 
 window.mainloop()

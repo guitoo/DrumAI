@@ -16,10 +16,6 @@ def addapt_numpy_float64(numpy_float64):
     return AsIs(numpy_float64)
 def addapt_numpy_float32(numpy_float32):
     return AsIs(numpy_float32)
-# def addapt_numpy_array(numpy_array):
-#     return AsIs(tuple(numpy_array))
-    # return AsIs(numpy_array.tolist())
-# register_adapter(np.ndarray, addapt_numpy_array)
 register_adapter(np.float64, addapt_numpy_float64)
 register_adapter(np.float32, addapt_numpy_float32)
 
@@ -57,8 +53,6 @@ class Array1D(TypeDecorator):
     def process_result_value(self, value, dialect):
         if value is None:
             return None
-        # print('tonumpy', type(value))
-        # convert sql string to python time
         return np.array(value)
 
     def __str__(self):
